@@ -65,7 +65,11 @@ namespace Strategiya
         }
 
         public void MoveUnit()
-        {           
+        {
+            if (OffsetX != 0 || OffsetY != 0)
+            {
+                Form1.formPointer._Log(OffsetX.ToString() + " " + OffsetY.ToString());
+            }
             if (path != null)
             {        
                 if (isNextStep)
@@ -144,6 +148,12 @@ namespace Strategiya
                     OffsetY += 8;
                     break;
             }
+            if (OffsetX < -96 || OffsetX > 96 || OffsetY < -96 || OffsetY > 96)
+            {
+                currentDirection = DirectionUnit.None;
+                OffsetX = 0;
+                OffsetY = 0;
+            }
             if (OffsetX == 0 && OffsetY == 0)
             {
                 if (path.Count - 1 == nextStep)
@@ -151,7 +161,7 @@ namespace Strategiya
                     currentDirection = DirectionUnit.None;
                     isNextStep = false;
                     Form1.formPointer._Log("Стоп");
-                }              
+                }
                 else nextStep++;
 
                 if (Notify.Invoke(this))
@@ -159,6 +169,13 @@ namespace Strategiya
                     isNextStep = false;
                     isW8Step = true;
                     currentDirection = DirectionUnit.None;
+                }
+                if(nextStep == 2)
+                {
+                    isNextStep = false;
+                    isW8Step = false;
+                    currentDirection = DirectionUnit.None;
+                    PathUnit(pointSave);
                 }
             }
             currAnimation += 0.5;
@@ -209,7 +226,7 @@ namespace Strategiya
                     position.Y++;
                     break;
             }
-            currentDirection = direction;  
+            currentDirection = direction;
         }
 
         public void Destroy()

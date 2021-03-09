@@ -4,6 +4,7 @@ using System.Windows.Forms;
 
 namespace Strategiya
 {
+
     public enum BuildingState
     {
         Starting = 2, Сompleted = 0

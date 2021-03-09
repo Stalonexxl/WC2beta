@@ -132,6 +132,7 @@ namespace Strategiya
             // 
             // tbLog
             // 
+            this.tbLog.Enabled = false;
             this.tbLog.Location = new System.Drawing.Point(1225, 12);
             this.tbLog.Multiline = true;
             this.tbLog.Name = "tbLog";
