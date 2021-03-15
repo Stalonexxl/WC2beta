@@ -24,11 +24,13 @@ namespace Strategiya
         public int attackPower { get; protected set; }
         public string fraction { get; protected set; }
         protected DirectionUnit currentDirection;
+        protected DirectionUnit pastDirection;
         public int Id { get; protected set; }
         public int NextStep { get => nextStep; }
         public List<Point> Path { get => path; }
 
         System.Windows.Forms.Timer timer;
+        System.Windows.Forms.Timer timerDie;
         protected Bitmap[,] Sprite;
         int[,] arrM;
         protected double currAnimation = 0;
@@ -42,13 +44,18 @@ namespace Strategiya
         protected int size = 96;
         protected int size2 = 144;
         protected static int counter = 0;
+        protected bool isAttack = false;
         Point pointSave;
         public bool isPressed = false;
         public Unit()
         {
             timer = new System.Windows.Forms.Timer();
-            timer.Interval = 10;
+            timer.Interval = 150;
             timer.Tick += new EventHandler(CanAttack);
+            timerDie = new System.Windows.Forms.Timer();
+            timerDie.Interval = 120;
+            timerDie.Tick += new EventHandler(СheckDestroy);
+            timerDie.Start();
         }
         public void PathUnit(Point pointUnit)
         {
@@ -61,15 +68,15 @@ namespace Strategiya
             nextStep = 0;
             isNextStep = true;
             isW8Step = false;
+            if(isAttack)
+                currentDirection = DirectionUnit.None;
+            isAttack = false;
+            currAnimation = 0;
             TimerStart();
         }
 
         public void MoveUnit()
         {
-            if (OffsetX != 0 || OffsetY != 0)
-            {
-                Form1.formPointer._Log(OffsetX.ToString() + " " + OffsetY.ToString());
-            }
             if (path != null)
             {        
                 if (isNextStep)
@@ -114,7 +121,7 @@ namespace Strategiya
         }
 
         private void UnitTimer()
-        {
+        {         
             if (currAnimation == 4)
                 currAnimation = 0;
             switch (currentDirection)
@@ -160,7 +167,7 @@ namespace Strategiya
                 {
                     currentDirection = DirectionUnit.None;
                     isNextStep = false;
-                    Form1.formPointer._Log("Стоп");
+                    //Form1.formPointer._Log("Стоп");
                 }
                 else nextStep++;
 
@@ -170,15 +177,25 @@ namespace Strategiya
                     isW8Step = true;
                     currentDirection = DirectionUnit.None;
                 }
+               /*if(!Notify.Invoke(this) && nextStep == 2)
+                {
+                    isNextStep = false;
+                    isW8Step = false;
+                    isAttack = false;
+                    currentDirection = DirectionUnit.None;
+                    PathUnit(pointSave);
+                }*/
                 if(nextStep == 2)
                 {
                     isNextStep = false;
                     isW8Step = false;
+                    isAttack = false;
                     currentDirection = DirectionUnit.None;
                     PathUnit(pointSave);
                 }
             }
-            currAnimation += 0.5;
+            if(!isAttack)
+                currAnimation += 0.5;
         }
 
         public void Move(DirectionUnit direction)
@@ -227,34 +244,83 @@ namespace Strategiya
                     break;
             }
             currentDirection = direction;
+            pastDirection = currentDirection;
         }
 
-        public void Destroy()
+        private void СheckDestroy(object sender, EventArgs e)
         {
-            if(health <= 0)
-                Form1.formPointer.units.Remove(this);
+            if(health <= 0)              
+                Destroy();
         }
 
-        public void TimerStart()
+        public virtual void Destroy(){}
+
+        private Unit enemy;
+        private void TimerStart()
         {
             if (NotifyFight?.Invoke(this) != null)
+            {
+                enemy = NotifyFight?.Invoke(this);
                 timer.Start();
+            }
+            else enemy = null;
         }
 
-        public void CanAttack(object sender, EventArgs e)
+        private void CanAttack(object sender, EventArgs e)
         {
-            Unit enemy = NotifyFight?.Invoke(this);
-            if (enemy != null)
+            if (currAnimation == 8)
             {
-                if (Math.Abs(Position.X - enemy.Position.X) == 1 && Math.Abs(Position.Y - enemy.Position.Y) == 1)
-                    attack(enemy);
-            }         
+                enemy.health -= attackPower;
+                currAnimation = 5;
+            }
+            if (enemy != null)
+                for(int i = enemy.Position.X-1; i <= enemy.Position.X+1; i++)
+                    for(int j = enemy.Position.Y-1; j <= enemy.Position.Y+1; j++)
+                        if (Position.X == i && Position.Y == j)
+                        {
+                            currentDirection = DirectionUnit.None;
+                            isAttack = true;
+                            attack(enemy);
+                        }
         }
+
         public void attack(Unit enemy)
         {
-            Form1.formPointer._Log("1");
-            enemy.health -= attackPower;
-            timer.Stop();
+            if(isAttack)
+            {
+                currentDirection = chooseDirectionOnAttack(enemy);
+                if (currAnimation < 5)
+                    currAnimation = 5;  
+                currAnimation += 0.5;
+                if (enemy == null || enemy.health < 0)
+                {
+                    isAttack = false;
+                    timer.Stop();
+                    currAnimation = 0;
+                    currentDirection = DirectionUnit.None;
+                }
+            }
+        }
+
+        private DirectionUnit chooseDirectionOnAttack(Unit enemy)
+        {
+            if(enemy.Position.X - Position.X == 1 && enemy.Position.Y - Position.Y == 1)
+                    return DirectionUnit.DownRight;
+            if(enemy.Position.X - Position.X == 0 && enemy.Position.Y - Position.Y == 1)
+                    return DirectionUnit.Down;
+            if(enemy.Position.X - Position.X == -1 && enemy.Position.Y - Position.Y == 1)
+                    return DirectionUnit.DownLeft;
+            if(enemy.Position.X - Position.X == 1 && enemy.Position.Y - Position.Y == 0)
+                    return DirectionUnit.Right;
+            if(enemy.Position.X - Position.X == -1 && enemy.Position.Y - Position.Y == 0)
+                    return DirectionUnit.Left;
+            if(enemy.Position.X - Position.X == 1 && enemy.Position.Y - Position.Y == -1)
+                    return DirectionUnit.UpRight;
+            if(enemy.Position.X - Position.X == 0 && enemy.Position.Y - Position.Y == -1)
+                    return DirectionUnit.Up;
+            if(enemy.Position.X - Position.X == -1 && enemy.Position.Y - Position.Y == -1)
+                    return DirectionUnit.UpLeft;
+            return DirectionUnit.None;
         }
     }
 }

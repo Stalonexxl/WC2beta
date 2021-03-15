@@ -6,8 +6,8 @@ namespace Strategiya
     {
         public GruntOrc(Point pos)
         {
-            Sprite = new Bitmap[5, 9];
-            for (int i = 0; i < 5; i++)
+            Sprite = new Bitmap[12, 9];
+            for (int i = 0; i < 12; i++)
                 for (int j = 0; j < 9; j++)
                 {
                     Sprite[i, j] = new Bitmap(size, size);
@@ -26,7 +26,7 @@ namespace Strategiya
                         using (Graphics g = Graphics.FromImage(Sprite[i, j]))
                             g.DrawImage(Properties.Resources.grunt, 0, 0, new Rectangle(25, 5, size, size), GraphicsUnit.Pixel);
                 }
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 12; i++)
             {
                 Sprite[i, 5].RotateFlip(RotateFlipType.Rotate180FlipY);
                 Sprite[i, 6].RotateFlip(RotateFlipType.Rotate180FlipY);
@@ -42,6 +42,18 @@ namespace Strategiya
             health = 100;
             attackPower = 10;
             fraction = "horde";
+        }
+        public override void Destroy()
+        {
+            if(currAnimation < 9)
+            {
+                currAnimation = 9;
+                currentDirection = pastDirection;
+            }
+            currAnimation += 0.1;
+
+            if(currAnimation >= 11.8)
+            Form1.formPointer.units.Remove(this);
         }
     }
 }

@@ -103,18 +103,9 @@ namespace Strategiya
         {
             CheckContols();
             Invalidate();
-            try
-            {
-                foreach (Unit Grunt in units)
-                {
-                    Grunt.Destroy();
-                    Grunt.MoveUnit();
-                }
-            }
-            catch (InvalidOperationException)
-            {
-                
-            }
+         
+            foreach (Unit unit in units)
+                unit.MoveUnit();
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
@@ -277,6 +268,7 @@ namespace Strategiya
                     }
             return false;
         }
+
         public static bool CheckPutObj(int x, int y)
         {
             Point positionOb = new Point(x, y);
@@ -292,36 +284,7 @@ namespace Strategiya
             }
             return true;
         }
-
-        public static bool CanMoveUnit(GameObjects gObject, DirectionUnit direction)
-        {
-            Point destination = gObject.Position;
-            switch (direction)
-            {
-                case DirectionUnit.Down:
-                    destination.Offset(0, 1);
-                    break;
-                case DirectionUnit.Left:
-                    destination.Offset(-1, 0);
-                    break;
-                case DirectionUnit.Up:
-                    destination.Offset(0, -1);
-                    break;
-                case DirectionUnit.Right:
-                    destination.Offset(1, 0);
-                    break;
-            }
-            if (destination.X < 0 || destination.X >= m.width || destination.Y < 0 || destination.Y >= m.height)
-                return false;
-            foreach (Building build in buildings)
-                if (destination == build.Position || destination == build.Position1 || destination == build.Position2 || destination == build.Position3)
-                    return false;
-
-            if (m.arrMap[destination.X][destination.Y] >= 400)
-                return false;
-
-            return true;
-        }
+       
         private void CheckContols()
         {
             if (Cursor.Position.X > 1360)

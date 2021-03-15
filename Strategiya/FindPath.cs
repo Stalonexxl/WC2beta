@@ -25,6 +25,7 @@ namespace Strategiya
                 return this.PathLengthFromStart + this.HeuristicEstimatePathLength;
             }
         }
+        public static int CounterNewGoal;
         public static List<Point> FindPath(int[,] field, Point start, Point goal, Unit unit)
         {
             // Шаг 1.
@@ -38,42 +39,24 @@ namespace Strategiya
             if (!CheckGoal(field, goal, unit))
             {
                 bool go = true;
-                var checkSet = new Collection<PathNode>();
-                var closedCheckSet = new Collection<PathNode>();
+                CounterNewGoal = 0;
                 var goodGoal = new Collection<PathNode>();
                 var FirstGoal = new PathNode()
                 {
                     Position = goal
                 };
-                checkSet.Add(FirstGoal);
-
-                while (go)
+                while(go)
                 {
-                    if(goodGoal.Count > 0)
-                        go = false;
-                    try
+                    CounterNewGoal++;
+                    foreach (var TheoreticallyNewGoal in GetNewGoal(start, FirstGoal))
                     {
-                        foreach (var TestTheoreticallyNewGoal in checkSet)
+                        if (CheckGoal(field, TheoreticallyNewGoal.Position, unit))
                         {
-                            checkSet.Remove(TestTheoreticallyNewGoal);
-                            closedCheckSet.Add(TestTheoreticallyNewGoal);
-                            foreach (var TheoreticallyNewGoal in GetNewGoal(start, TestTheoreticallyNewGoal, field))
-                            {
-                                
-
-                                if (CheckGoal(field, TheoreticallyNewGoal.Position, unit))
-                                {
-                                    goodGoal.Add(TheoreticallyNewGoal);
-                                    //Form1.formPointer._Log(TheoreticallyNewGoal.HeuristicEstimatePathLength.ToString());
-                                }
-                                else
-                                {
-                                    checkSet.Add(TheoreticallyNewGoal);
-                                }
-                            }
-                        }
+                            goodGoal.Add(TheoreticallyNewGoal);
+                            go = false;
+                        }                            
                     }
-                    catch { }
+
                 }
                 var GoodGoal = goodGoal.OrderBy(node => node.HeuristicEstimatePathLength).First();
                 goal = GoodGoal.Position;
@@ -95,7 +78,7 @@ namespace Strategiya
                 openSet.Remove(currentNode);
                 closedSet.Add(currentNode);
                 // Шаг 6.
-                foreach (var neighbourNode in GetNeighbours(currentNode, goal, field))
+                foreach (var neighbourNode in GetNeighbours(currentNode, goal, field, unit))
                 {
                     // Шаг 7.
                     if (closedSet.Count(node => node.Position == neighbourNode.Position) > 0)
@@ -112,7 +95,7 @@ namespace Strategiya
                         openNode.PathLengthFromStart = neighbourNode.PathLengthFromStart;
                         }
                 }
-            }            
+            }
             return null;
         }
         private static int GetDistanceBetweenNeighbours()
@@ -154,48 +137,36 @@ namespace Strategiya
             return true;
         }
 
-        private static Collection<PathNode> GetNewGoal(Point start, PathNode goal, int[,] field)
+
+        private static Collection<PathNode> GetNewGoal(Point start, PathNode goal)
         {
             var Set = new Collection<PathNode>();
             Point[] neighbourPoints = new Point[8];
-            neighbourPoints[0] = new Point(goal.Position.X + 1, goal.Position.Y);
-            neighbourPoints[1] = new Point(goal.Position.X - 1, goal.Position.Y);
-            neighbourPoints[2] = new Point(goal.Position.X, goal.Position.Y + 1);
-            neighbourPoints[3] = new Point(goal.Position.X, goal.Position.Y - 1);
-            neighbourPoints[4] = new Point(goal.Position.X + 1, goal.Position.Y + 1);
-            neighbourPoints[5] = new Point(goal.Position.X - 1, goal.Position.Y + 1);
-            neighbourPoints[6] = new Point(goal.Position.X + 1, goal.Position.Y - 1);
-            neighbourPoints[7] = new Point(goal.Position.X - 1, goal.Position.Y - 1);
-            int _ind = 0;
+            neighbourPoints[0] = new Point(goal.Position.X + CounterNewGoal, goal.Position.Y);
+            neighbourPoints[1] = new Point(goal.Position.X - CounterNewGoal, goal.Position.Y);
+            neighbourPoints[2] = new Point(goal.Position.X, goal.Position.Y + CounterNewGoal);
+            neighbourPoints[3] = new Point(goal.Position.X, goal.Position.Y - CounterNewGoal);
+            neighbourPoints[4] = new Point(goal.Position.X + CounterNewGoal, goal.Position.Y + CounterNewGoal);
+            neighbourPoints[5] = new Point(goal.Position.X - CounterNewGoal, goal.Position.Y + CounterNewGoal);
+            neighbourPoints[6] = new Point(goal.Position.X + CounterNewGoal, goal.Position.Y - CounterNewGoal);
+            neighbourPoints[7] = new Point(goal.Position.X - CounterNewGoal, goal.Position.Y - CounterNewGoal);
             foreach (var point in neighbourPoints)
             {
-                var neighbourNode = new PathNode();
-                if (_ind <= 3)
+                var neighbourNode  = new PathNode()
                 {
-                    neighbourNode = new PathNode()
-                    {
-                        Position = point,
-                        HeuristicEstimatePathLength = GetHeuristicPathLength(start, point)
-                    };
-                }
-                else
-                {
-                    neighbourNode = new PathNode()
-                    {
-                        Position = point,
-                        HeuristicEstimatePathLength = GetHeuristicPathLength(start, point),
-                    };
-                }
+                    Position = point,
+                    HeuristicEstimatePathLength = GetHeuristicPathLength(start, point)
+                };
                 Set.Add(neighbourNode);
-                _ind++;
             }
-            //var currentNode = Set.OrderBy(node => node.HeuristicEstimatePathLength).First();
             return Set;
         }
-        private static Collection<PathNode> GetNeighbours(PathNode pathNode, Point goal, int[,] field)
+
+
+
+        private static Collection<PathNode> GetNeighbours(PathNode pathNode, Point goal, int[,] field, Unit unit)
         {
             var result = new Collection<PathNode>();
-            bool IsFlag = false;
             // Соседними точками являются соседние по стороне клетки.
             Point[] neighbourPoints = new Point[8];
             neighbourPoints[0] = new Point(pathNode.Position.X + 1, pathNode.Position.Y);
@@ -232,28 +203,9 @@ namespace Strategiya
                     };
                 }
 
-                // Проверяем, что не вышли за границы карты.
-                if (point.X < 0 || point.X >= field.GetLength(0))
+                // Проверяем, что не вышли за границы карты.              
+                if (!CheckGoal(field,point,unit))
                     continue;
-                if (point.Y < 0 || point.Y >= field.GetLength(1))
-                    continue;
-                // Проверяем, что по клетке можно ходить.
-                if ((field[point.Y, point.X] >= 400))
-                    continue;
-
-                foreach (Building build in Form1.buildings)
-                    if (build.Position.X == point.X && build.Position.Y == point.Y || build.Position1.X == point.X && build.Position1.Y == point.Y || build.Position2.X == point.X && build.Position2.Y == point.Y || build.Position3.X == point.X && build.Position3.Y == point.Y)
-                        IsFlag = true;
-
-                foreach (Unit units in Form1.formPointer.units)
-                        if (point.X == units.Position.X && point.Y == units.Position.Y)       
-                            IsFlag = true;
-
-                if (IsFlag)
-                {
-                    IsFlag = false;
-                    continue;
-                }
 
                 result.Add(neighbourNode);
                 _ind++;
