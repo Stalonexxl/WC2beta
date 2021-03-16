@@ -27,6 +27,7 @@ namespace Strategiya
         int DragW;
         Rectangle rectUnit;
         public Point pointUnit { get; private set; }
+        public Point newPointUnit { get; private set; }
         public Form1()
         {
             InitializeComponent();
@@ -36,6 +37,7 @@ namespace Strategiya
             //this.Cursor = cur;
             formPointer = this;
 
+            //Добавление юнитов
             units = new List<Unit>();
             units.Add(new GruntOrc(new Point(1, 1)));
             units.Add(new GruntOrc(new Point(2, 1)));
@@ -43,6 +45,9 @@ namespace Strategiya
             units.Add(new GruntOrc(new Point(4, 1)));
             units.Add(new GruntOrc(new Point(5, 1)));
             units.Add(new Ogre(new Point(6, 1)));
+
+
+
             timer1.Interval = 10;
             timer1.Tick += new EventHandler(update);
             timer1.Start();           
@@ -203,12 +208,8 @@ namespace Strategiya
                 if (enemy.Id == unit.Id)
                     continue;
                 if (enemy.fraction != unit.fraction)
-                {
                     if (pointUnit.X == enemy.Position.X && pointUnit.Y == enemy.Position.Y)
-                    {
-                        return enemy;
-                    }
-                }             
+                        return enemy;           
             }
             return null;    
         }
@@ -222,15 +223,18 @@ namespace Strategiya
             switch (e.Button.ToString())
             {
                 case "Right":
-                    
                         foreach (Unit unit in units)
                         {
                             if (legion.Contains(unit))
-                            {                    
-                                pointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)Form1.CameraX, ((Cursor.Position.Y - 57) / 96) + (int)Form1.CameraY);
-                                unit.PathUnit(pointUnit);
-                                unit.isPressed = true;
-                            }                            
+                            {
+                                unit.WantChangePath = true;
+                                newPointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)Form1.CameraX, ((Cursor.Position.Y - 57) / 96) + (int)Form1.CameraY);
+                                if (!unit.isMooving)
+                                {
+                                    pointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)Form1.CameraX, ((Cursor.Position.Y - 57) / 96) + (int)Form1.CameraY);
+                                    unit.PathUnit(pointUnit);
+                                }
+                            }
                         }
                         
                     break;
@@ -263,9 +267,7 @@ namespace Strategiya
             for (int i = 0; i < 10; i++)
                 for (int j = 0; j < 10; j++)
                     if (j + (int)CameraY == p.Y && i + (int)CameraX == p.X)
-                    {
                         return true;
-                    }
             return false;
         }
 
@@ -288,25 +290,17 @@ namespace Strategiya
         private void CheckContols()
         {
             if (Cursor.Position.X > 1360)
-            {
                 if (CameraX <= m.width - 10)
                     CameraX += 0.25;
-            }
             if (Cursor.Position.X < 15)
-            {
                 if (CameraX >= 0)
                     CameraX -= 0.25;
-            }
             if (Cursor.Position.Y > 1020)
-            {
                 if (CameraY <= m.height - 10)
                     CameraY += 0.25;
-            }
             if (Cursor.Position.Y < 50)
-            {
                 if (CameraY >= 0)
                     CameraY -= 0.25;
-            }
         }
 
         private void Form_key_press(object sender, KeyEventArgs e)
@@ -351,13 +345,11 @@ namespace Strategiya
                             }
                 }
                 isDrag = false;
-            }
-                
+            }                
         }
         public void _Log(string s)
         {
             tbLog.Text = tbLog.Text + s + Environment.NewLine;
         }
-
     }
 }

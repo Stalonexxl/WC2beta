@@ -46,7 +46,8 @@ namespace Strategiya
         protected static int counter = 0;
         protected bool isAttack = false;
         Point pointSave;
-        public bool isPressed = false;
+        public bool WantChangePath = false;
+        public bool isMooving = false;
         public Unit()
         {
             timer = new System.Windows.Forms.Timer();
@@ -66,13 +67,15 @@ namespace Strategiya
                     arrM[i,j] = Form1.m.arrMap[i][j];
             path = PathNode.FindPath(arrM, position, pointSave, this);
             nextStep = 0;
+            currAnimation = 0;
             isNextStep = true;
             isW8Step = false;
-            if(isAttack)
-                currentDirection = DirectionUnit.None;
             isAttack = false;
-            currAnimation = 0;
+            isMooving = true;
+            if (isAttack)
+                currentDirection = DirectionUnit.None;
             TimerStart();
+            //Form1.formPointer._Log("PathUnit");
         }
 
         public void MoveUnit()
@@ -83,6 +86,7 @@ namespace Strategiya
                 {
                     try
                     {
+                        //Form1.formPointer._Log("MoveUnit " + nextStep.ToString());
                         nextPosition.X = path[nextStep].X;
                         nextPosition.Y = path[nextStep].Y;
                         if (nextPosition.X - position.X == -1 && nextPosition.Y - position.Y == 1)
@@ -111,8 +115,10 @@ namespace Strategiya
                 }
                 if (isW8Step)
                 {
+                    //Form1.formPointer._Log("isW8Step");
                     if (!Notify.Invoke(this))
                     {
+                        //Form1.formPointer._Log("isW8Step = false");
                         isW8Step = false;
                         isNextStep = true;
                     }         
@@ -121,39 +127,43 @@ namespace Strategiya
         }
 
         private void UnitTimer()
-        {         
+        {
+            //Form1.formPointer._Log("UnitTimer " + OffsetX.ToString() + " " + OffsetY.ToString());
             if (currAnimation == 4)
                 currAnimation = 0;
-            switch (currentDirection)
+            if (nextStep != 0)
             {
-                case DirectionUnit.Down:
-                    OffsetY += 8;
-                    break;
-                case DirectionUnit.Left:
-                    OffsetX -= 8;
-                    break;
-                case DirectionUnit.Up:
-                    OffsetY -= 8;
-                    break;
-                case DirectionUnit.Right:
-                    OffsetX += 8;
-                    break;
-                case DirectionUnit.UpRight:
-                    OffsetX += 8;
-                    OffsetY -= 8;
-                    break;
-                case DirectionUnit.DownRight:
-                    OffsetX += 8;
-                    OffsetY += 8;
-                    break;
-                case DirectionUnit.UpLeft:
-                    OffsetX -= 8;
-                    OffsetY -= 8;
-                    break;
-                case DirectionUnit.DownLeft:
-                    OffsetX -= 8;
-                    OffsetY += 8;
-                    break;
+                switch (currentDirection)
+                {
+                    case DirectionUnit.Down:
+                        OffsetY += 8;
+                        break;
+                    case DirectionUnit.Left:
+                        OffsetX -= 8;
+                        break;
+                    case DirectionUnit.Up:
+                        OffsetY -= 8;
+                        break;
+                    case DirectionUnit.Right:
+                        OffsetX += 8;
+                        break;
+                    case DirectionUnit.UpRight:
+                        OffsetX += 8;
+                        OffsetY -= 8;
+                        break;
+                    case DirectionUnit.DownRight:
+                        OffsetX += 8;
+                        OffsetY += 8;
+                        break;
+                    case DirectionUnit.UpLeft:
+                        OffsetX -= 8;
+                        OffsetY -= 8;
+                        break;
+                    case DirectionUnit.DownLeft:
+                        OffsetX -= 8;
+                        OffsetY += 8;
+                        break;
+                }
             }
             if (OffsetX < -96 || OffsetX > 96 || OffsetY < -96 || OffsetY > 96)
             {
@@ -163,11 +173,16 @@ namespace Strategiya
             }
             if (OffsetX == 0 && OffsetY == 0)
             {
+                if (WantChangePath)
+                {
+                    PathUnit(Form1.formPointer.newPointUnit);
+                    WantChangePath = false;
+                }
                 if (path.Count - 1 == nextStep)
                 {
                     currentDirection = DirectionUnit.None;
                     isNextStep = false;
-                    //Form1.formPointer._Log("Стоп");
+                    isMooving = false;
                 }
                 else nextStep++;
 
@@ -177,24 +192,18 @@ namespace Strategiya
                     isW8Step = true;
                     currentDirection = DirectionUnit.None;
                 }
-               /*if(!Notify.Invoke(this) && nextStep == 2)
-                {
-                    isNextStep = false;
-                    isW8Step = false;
-                    isAttack = false;
-                    currentDirection = DirectionUnit.None;
+                /*if(!Notify.Invoke(this) && nextStep == 2)
+                    {
+                        isNextStep = false;
+                        isW8Step = false;
+                        isAttack = false;
+                        currentDirection = DirectionUnit.None;
+                        PathUnit(pointSave);
+                    }*/
+                if (nextStep == 2)
                     PathUnit(pointSave);
-                }*/
-                if(nextStep == 2)
-                {
-                    isNextStep = false;
-                    isW8Step = false;
-                    isAttack = false;
-                    currentDirection = DirectionUnit.None;
-                    PathUnit(pointSave);
-                }
             }
-            if(!isAttack)
+            if (!isAttack)
                 currAnimation += 0.5;
         }
 

@@ -13,8 +13,7 @@ namespace Strategiya
         void Destroy();
     }
     public interface Unitss
-    {
-        
+    {       
         int attackPower { get; }
         void attack(Unit obj);      
     }
