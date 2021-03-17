@@ -28,6 +28,7 @@ namespace Strategiya
         public int Id { get; protected set; }
         public int NextStep { get => nextStep; }
         public List<Point> Path { get => path; }
+        public Point pointUnit { get; set; }
 
         System.Windows.Forms.Timer timer;
         System.Windows.Forms.Timer timerDie;
@@ -48,6 +49,7 @@ namespace Strategiya
         Point pointSave;
         public bool WantChangePath = false;
         public bool isMooving = false;
+        public bool isHarassment = false;
         public Unit()
         {
             timer = new System.Windows.Forms.Timer();
@@ -68,14 +70,13 @@ namespace Strategiya
             path = PathNode.FindPath(arrM, position, pointSave, this);
             nextStep = 0;
             currAnimation = 0;
+            if (isAttack)
+                currentDirection = DirectionUnit.None;
             isNextStep = true;
             isW8Step = false;
             isAttack = false;
             isMooving = true;
-            if (isAttack)
-                currentDirection = DirectionUnit.None;
-            TimerStart();
-            //Form1.formPointer._Log("PathUnit");
+            TimerStart();           
         }
 
         public void MoveUnit()
@@ -115,13 +116,19 @@ namespace Strategiya
                 }
                 if (isW8Step)
                 {
+                    nextStep = 1;
+                    if (WantChangePath)
+                    {
+                        PathUnit(pointUnit);
+                        WantChangePath = false;
+                    }
                     //Form1.formPointer._Log("isW8Step");
                     if (!Notify.Invoke(this))
                     {
                         //Form1.formPointer._Log("isW8Step = false");
                         isW8Step = false;
                         isNextStep = true;
-                    }         
+                    }
                 }
             }
         }
@@ -175,7 +182,7 @@ namespace Strategiya
             {
                 if (WantChangePath)
                 {
-                    PathUnit(Form1.formPointer.newPointUnit);
+                    PathUnit(pointUnit);
                     WantChangePath = false;
                 }
                 if (path.Count - 1 == nextStep)
@@ -192,15 +199,7 @@ namespace Strategiya
                     isW8Step = true;
                     currentDirection = DirectionUnit.None;
                 }
-                /*if(!Notify.Invoke(this) && nextStep == 2)
-                    {
-                        isNextStep = false;
-                        isW8Step = false;
-                        isAttack = false;
-                        currentDirection = DirectionUnit.None;
-                        PathUnit(pointSave);
-                    }*/
-                if (nextStep == 2)
+                else if (nextStep == 2)
                     PathUnit(pointSave);
             }
             if (!isAttack)
@@ -267,43 +266,70 @@ namespace Strategiya
         private Unit enemy;
         private void TimerStart()
         {
+            Form1.formPointer._Log("TimerStart" + Id.ToString());
             if (NotifyFight?.Invoke(this) != null)
             {
+                Form1.formPointer._Log("enemy" + Id.ToString());
                 enemy = NotifyFight?.Invoke(this);
                 timer.Start();
             }
-            else enemy = null;
+            else 
+            {
+                Form1.formPointer._Log("NO enemy" + Id.ToString());
+                enemy = null; 
+            }
         }
 
         private void CanAttack(object sender, EventArgs e)
         {
+            harassmentMethod();
             if (currAnimation == 8)
             {
+                Form1.formPointer._Log("attack" + Id.ToString());
                 enemy.health -= attackPower;
                 currAnimation = 5;
             }
-            if (enemy != null)
-                for(int i = enemy.Position.X-1; i <= enemy.Position.X+1; i++)
-                    for(int j = enemy.Position.Y-1; j <= enemy.Position.Y+1; j++)
-                        if (Position.X == i && Position.Y == j)
-                        {
-                            currentDirection = DirectionUnit.None;
-                            isAttack = true;
-                            attack(enemy);
-                        }
+            if (enemy != null && OffsetX == 0 && OffsetY == 0)
+            {
+                if (!isAttack)
+                {
+                    for (int i = enemy.Position.X - 1; i <= enemy.Position.X + 1; i++)
+                        for (int j = enemy.Position.Y - 1; j <= enemy.Position.Y + 1; j++)
+                            if (Position.X == i && Position.Y == j)
+                                isAttack = true;
+                    if(isAttack)
+                        attack(enemy);
+                    else if(!isMooving)
+                        isHarassment = true;
+                }
+            }
+        }
+        public void harassmentMethod()
+        {
+            if (isHarassment && enemy != null)
+            {
+                Point harassment = enemy.pointUnit;
+                Form1.formPointer._Log(harassment.ToString() + Id.ToString());
+                Form1.formPointer._Log(enemy.Position.X.ToString() + " " + enemy.Position.Y.ToString() + enemy.ToString());
+                PathUnit(harassment);
+                timer.Stop();
+                isHarassment = false;
+            }
         }
 
         public void attack(Unit enemy)
         {
             if(isAttack)
             {
+                //Form1.formPointer._Log("isAttack");
                 currentDirection = chooseDirectionOnAttack(enemy);
                 if (currAnimation < 5)
                     currAnimation = 5;  
                 currAnimation += 0.5;
+                isAttack = false;
                 if (enemy == null || enemy.health < 0)
                 {
-                    isAttack = false;
+                    Form1.formPointer._Log("STOP Attack");
                     timer.Stop();
                     currAnimation = 0;
                     currentDirection = DirectionUnit.None;

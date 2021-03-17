@@ -26,8 +26,7 @@ namespace Strategiya
         int DragH;
         int DragW;
         Rectangle rectUnit;
-        public Point pointUnit { get; private set; }
-        public Point newPointUnit { get; private set; }
+        
         public Form1()
         {
             InitializeComponent();
@@ -81,26 +80,19 @@ namespace Strategiya
         {        
             foreach (Unit Grunt in units)
             {
-                if (gr.Id == Grunt.Id || Grunt.Path == null || Grunt.Path.Count == 0)
+                if (gr.Id == Grunt.Id || Grunt.Path == null || Grunt.Path.Count == 0 || Grunt.fraction != gr.fraction)
                     continue;
                 try
                 {
                     if (gr.Path[gr.NextStep] == Grunt.Path[Grunt.NextStep])
                         return true;
-                }
-                catch (ArgumentOutOfRangeException)
-                {
-                    _Log("Индекс вышел за границы");
-                }
-                try
-                {
                     if (gr.Path[gr.NextStep].X == Grunt.Position.X && gr.Path[gr.NextStep].Y == Grunt.Position.Y)
-                        return true;
+                        return true;            
                 }
                 catch (ArgumentOutOfRangeException)
                 {
-                    _Log("Индекс вышел за границы");
-                }                   
+                    _Log("Индекс вышел за границы(Notify)");
+                }
             }
             return false;
         }
@@ -208,8 +200,12 @@ namespace Strategiya
                 if (enemy.Id == unit.Id)
                     continue;
                 if (enemy.fraction != unit.fraction)
-                    if (pointUnit.X == enemy.Position.X && pointUnit.Y == enemy.Position.Y)
-                        return enemy;           
+                {
+                    if (unit.pointUnit.X == enemy.Position.X && unit.pointUnit.Y == enemy.Position.Y)
+                        return enemy;
+                    if (unit.pointUnit.X == enemy.pointUnit.X && unit.pointUnit.Y == enemy.pointUnit.Y)
+                        return enemy;
+                }
             }
             return null;    
         }
@@ -228,12 +224,9 @@ namespace Strategiya
                             if (legion.Contains(unit))
                             {
                                 unit.WantChangePath = true;
-                                newPointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)Form1.CameraX, ((Cursor.Position.Y - 57) / 96) + (int)Form1.CameraY);
-                                if (!unit.isMooving)
-                                {
-                                    pointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)Form1.CameraX, ((Cursor.Position.Y - 57) / 96) + (int)Form1.CameraY);
-                                    unit.PathUnit(pointUnit);
-                                }
+                                unit.pointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)Form1.CameraX, ((Cursor.Position.Y - 57) / 96) + (int)Form1.CameraY);
+                                if (!unit.isMooving)                                    
+                                    unit.PathUnit(unit.pointUnit);
                             }
                         }
                         
@@ -243,6 +236,7 @@ namespace Strategiya
                     //if (Cursor.Position.X > 384 && Cursor.Position.X < 1360 && Cursor.Position.Y > 50 && Cursor.Position.Y < 1020)
                         //if (CheckPutObj(((Cursor.Position.X - 384) / 96) + (int)CameraX, ((Cursor.Position.Y - 57) / 96) + (int)CameraY))
                             //Forest.GenerateForest();
+
                     // Левая кнопка мыши на миникарте.
                     if (Cursor.Position.X > 30 && Cursor.Position.Y > 53 && Cursor.Position.X < 330 && Cursor.Position.Y < 353)
                     {
@@ -337,7 +331,7 @@ namespace Strategiya
                 foreach (Unit unit in units)
                 {
                     if (unit.Position.X >= DragX && unit.Position.X <= DragW && unit.Position.Y >= DragY && unit.Position.Y <= DragH) 
-                        if (unit.fraction == "horde")
+                        
                             if (!unit.addInLegion)
                             {
                                 legion.Add(unit);

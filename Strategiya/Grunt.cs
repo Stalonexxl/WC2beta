@@ -51,8 +51,9 @@ namespace Strategiya
                 currentDirection = pastDirection;
             }
             currAnimation += 0.1;
-
-            if(currAnimation >= 11.8)
+            isAttack = false;
+            isMooving = false;
+            if (currAnimation >= 11.8)
             Form1.formPointer.units.Remove(this);
         }
     }

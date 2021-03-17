@@ -50,8 +50,9 @@ namespace Strategiya
                 currAnimation = 9;
                 currentDirection = pastDirection;
             }
-            currAnimation += 0.1;    
-
+            currAnimation += 0.1;
+            isAttack = false;
+            isMooving = false;
             if(currAnimation >= 13.8)
                 Form1.formPointer.units.Remove(this);             
         }
