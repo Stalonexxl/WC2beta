@@ -119,11 +119,11 @@ namespace Strategiya
             if (goal.Y < 0 || goal.Y >= field.GetLength(1))
                 return false;
 
-            foreach (Building build in Form1.buildings)
+            foreach (Building build in GameMehanic.buildings)
                 if (build.Position.X == goal.X && build.Position.Y == goal.Y || build.Position1.X == goal.X && build.Position1.Y == goal.Y || build.Position2.X == goal.X && build.Position2.Y == goal.Y || build.Position3.X == goal.X && build.Position3.Y == goal.Y)
                     return false;
 
-            foreach (Unit units in Form1.formPointer.units)
+            foreach (Unit units in GameMehanic.units)
             {
                 if (unit.Id == units.Id)
                     continue;

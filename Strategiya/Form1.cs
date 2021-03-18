@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -10,23 +9,19 @@ namespace Strategiya
         public static Form1 formPointer;
         public static Map m;
         public static Image[] images;
-        public static List<Building> buildings;
         Pen whitePen;
         Pen GreenPen;
         public static double CameraX { get; set; } = 0;
         public static double CameraY { get; set; } = 0;
-        public List<Unit> units;
         Rectangle rectDrag;
         bool isDrag = false;
         Point startDrag;
         Point finalDrag;
-        public List<Unit> legion;
         int DragX;
         int DragY;
         int DragH;
         int DragW;
         Rectangle rectUnit;
-        
         public Form1()
         {
             InitializeComponent();
@@ -36,33 +31,13 @@ namespace Strategiya
             //this.Cursor = cur;
             formPointer = this;
 
-            //Добавление юнитов
-            units = new List<Unit>();
-            units.Add(new GruntOrc(new Point(1, 1)));
-            units.Add(new GruntOrc(new Point(2, 1)));
-            units.Add(new GruntOrc(new Point(3, 1)));
-            units.Add(new GruntOrc(new Point(4, 1)));
-            units.Add(new GruntOrc(new Point(5, 1)));
-            units.Add(new Ogre(new Point(6, 1)));
-
-
-
             timer1.Interval = 10;
             timer1.Tick += new EventHandler(update);
             timer1.Start();           
 
-            buildings = new List<Building>();
-
-            foreach(Unit Grunt in units)
-            {
-                Grunt.Notify += new Unit.DelegatHandler(StopMoving);
-                Grunt.NotifyFight += new Unit.DelegatHandler2(Fight);
-            }
-
             this.DoubleBuffered = true;
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
 
-            legion = new List<Unit>(); 
             m = new Map("D:\\WC2\\MAPS\\01");
 
             images = new Image[5];
@@ -76,32 +51,12 @@ namespace Strategiya
             //ClientSize = new Size(m.width * size, m.height * size);          
         }
 
-        private bool StopMoving(Unit gr)
-        {        
-            foreach (Unit Grunt in units)
-            {
-                if (gr.Id == Grunt.Id || Grunt.Path == null || Grunt.Path.Count == 0 || Grunt.fraction != gr.fraction)
-                    continue;
-                try
-                {
-                    if (gr.Path[gr.NextStep] == Grunt.Path[Grunt.NextStep])
-                        return true;
-                    if (gr.Path[gr.NextStep].X == Grunt.Position.X && gr.Path[gr.NextStep].Y == Grunt.Position.Y)
-                        return true;            
-                }
-                catch (ArgumentOutOfRangeException)
-                {
-                    _Log("Индекс вышел за границы(Notify)");
-                }
-            }
-            return false;
-        }
+        
         private void update(object sender, EventArgs e)
         {
             CheckContols();
             Invalidate();
-         
-            foreach (Unit unit in units)
+            foreach (Unit unit in GameMehanic.units)
                 unit.MoveUnit();
         }
 
@@ -125,7 +80,7 @@ namespace Strategiya
                     foreach (int h in CutForest.ForestNum)
                         if (m.arrMap[j + (int)CameraY][i + (int)CameraX] == h)
                             e.Graphics.DrawImage(CutForest.forest[Array.IndexOf(CutForest.ForestNum, h)], 384 + 96 * i, 32 + 96 * j);
-                    foreach (Building build in buildings)
+                    foreach (Building build in GameMehanic.buildings)
                     {
                         if (build.Position.X == i + (int)CameraX && build.Position.Y == j + (int)CameraY)
                         {
@@ -149,17 +104,21 @@ namespace Strategiya
                         }
                     }                    
                 }
-            foreach (Unit Grunt in units)
-                if (DrawUnits(Grunt))
+            foreach(Unit units in GameMehanic.cemetery)
+                if (DrawUnits(units))
+                    e.Graphics.DrawImage(units.Picture, new Point(384 + 96 * units.Position.X - (int)CameraX * 96, 32 + 96 * units.Position.Y - (int)CameraY * 96));
+
+            foreach (Unit units in GameMehanic.units)
+                if (DrawUnits(units))
                 {
-                    if (legion.Contains(Grunt))
+                    if (GameMehanic.legion.Contains(units))
                     {
-                        rectUnit = new Rectangle(384 + 96 * Grunt.Position.X - (int)CameraX * 96 + Grunt.OffsetX, 32 + 96 * Grunt.Position.Y - (int)CameraY * 96 + Grunt.OffsetY, 93, 93);
+                        rectUnit = new Rectangle(384 + 96 * units.Position.X - (int)CameraX * 96 + units.OffsetX, 32 + 96 * units.Position.Y - (int)CameraY * 96 + units.OffsetY, 93, 93);
                         e.Graphics.DrawRectangle(GreenPen, rectUnit);
                     }
-                    e.Graphics.DrawImage(Grunt.Picture, new Point(384 + 96 * Grunt.Position.X - (int)CameraX * 96 + Grunt.OffsetX, 32 + 96 * Grunt.Position.Y - (int)CameraY * 96 + Grunt.OffsetY));       
+                    e.Graphics.DrawImage(units.Picture, new Point(384 + 96 * units.Position.X - (int)CameraX * 96 + units.OffsetX, 32 + 96 * units.Position.Y - (int)CameraY * 96 + units.OffsetY));       
                 }
-            foreach (Building build in buildings)
+            foreach (Building build in GameMehanic.buildings)
                 build.healthincreace();
             // Отрисовка большого белого квадрата на карте
             if (Cursor.Position.X > 384 && Cursor.Position.X < 1360 && Cursor.Position.Y > 50 && Cursor.Position.Y < 1020)
@@ -193,23 +152,6 @@ namespace Strategiya
             }
         }
 
-        public Unit Fight(Unit unit)
-        {
-            foreach (Unit enemy in units)
-            {
-                if (enemy.Id == unit.Id)
-                    continue;
-                if (enemy.fraction != unit.fraction)
-                {
-                    if (unit.pointUnit.X == enemy.Position.X && unit.pointUnit.Y == enemy.Position.Y)
-                        return enemy;
-                    if (unit.pointUnit.X == enemy.pointUnit.X && unit.pointUnit.Y == enemy.pointUnit.Y)
-                        return enemy;
-                }
-            }
-            return null;    
-        }
-
         private void Form1_Click(object sender, MouseEventArgs e)
         {
             // Отображение координат
@@ -219,13 +161,15 @@ namespace Strategiya
             switch (e.Button.ToString())
             {
                 case "Right":
-                        foreach (Unit unit in units)
+                        foreach (Unit unit in GameMehanic.units)
                         {
-                            if (legion.Contains(unit))
+                            if (GameMehanic.legion.Contains(unit))
                             {
                                 unit.WantChangePath = true;
-                                unit.pointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)Form1.CameraX, ((Cursor.Position.Y - 57) / 96) + (int)Form1.CameraY);
-                                if (!unit.isMooving)                                    
+                                unit.pointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)CameraX, ((Cursor.Position.Y - 57) / 96) + (int)CameraY);
+                                if(unit.fraction == "horde")
+                                    unit.TimerStart();
+                                if (!unit.isMooving)
                                     unit.PathUnit(unit.pointUnit);
                             }
                         }
@@ -265,22 +209,6 @@ namespace Strategiya
             return false;
         }
 
-        public static bool CheckPutObj(int x, int y)
-        {
-            Point positionOb = new Point(x, y);
-
-            foreach (Building build in buildings)
-            {
-                if (build.Position.X == positionOb.X && build.Position.Y == positionOb.Y || build.Position1.X == positionOb.X && build.Position1.Y == positionOb.Y ||
-                    build.Position2.X == positionOb.X && build.Position2.Y == positionOb.Y || build.Position3.X == positionOb.X && build.Position3.Y == positionOb.Y ||
-                    build.Position.X == positionOb.X && build.Position.Y - 1 == positionOb.Y || build.Position1.X == positionOb.X && build.Position1.Y - 1 == positionOb.Y ||
-                    build.Position.Y == positionOb.Y && build.Position.X - 1 == positionOb.X || build.Position2.Y == positionOb.Y && build.Position2.X - 1 == positionOb.X ||
-                    build.Position.Y-1 == positionOb.Y && build.Position.X - 1 == positionOb.X)
-                    return false;
-            }
-            return true;
-        }
-       
         private void CheckContols()
         {
             if (Cursor.Position.X > 1360)
@@ -303,8 +231,8 @@ namespace Strategiya
             {
                 // Постройка зданий
                 if (Cursor.Position.X > 384 && Cursor.Position.X < 1360 && Cursor.Position.Y > 50 && Cursor.Position.Y < 1020)
-                    if (CheckPutObj(((Cursor.Position.X - 384) / 96) + (int)CameraX, ((Cursor.Position.Y - 57) / 96) + (int)CameraY))
-                        buildings.Add(new Building(new Point(((Cursor.Position.X - 384) / 96) + (int)CameraX, ((Cursor.Position.Y - 57) / 96) + (int)CameraY)));
+                    if (GameMehanic.CheckPutObj(((Cursor.Position.X - 384) / 96) + (int)CameraX, ((Cursor.Position.Y - 57) / 96) + (int)CameraY))
+                        GameMehanic.buildings.Add(new Building(new Point(((Cursor.Position.X - 384) / 96) + (int)CameraX, ((Cursor.Position.Y - 57) / 96) + (int)CameraY)));
                 // Вырубка леса
                 if (Cursor.Position.X > 384 && Cursor.Position.X < 1360 && Cursor.Position.Y > 50 && Cursor.Position.Y < 1020)                   
                     Forest.DestroyForest();
@@ -315,8 +243,8 @@ namespace Strategiya
         {
             if (e.Button.ToString() == "Left")
             {
-                legion.Clear();
-                foreach (Unit Grunt in units)
+                GameMehanic.legion.Clear();
+                foreach (Unit Grunt in GameMehanic.units)
                     Grunt.addInLegion = false;
                 isDrag = true;
                 startDrag.X = Cursor.Position.X;
@@ -328,13 +256,13 @@ namespace Strategiya
         {
             if (e.Button.ToString() == "Left")
             {
-                foreach (Unit unit in units)
+                foreach (Unit unit in GameMehanic.units)
                 {
                     if (unit.Position.X >= DragX && unit.Position.X <= DragW && unit.Position.Y >= DragY && unit.Position.Y <= DragH) 
                         
                             if (!unit.addInLegion)
                             {
-                                legion.Add(unit);
+                                GameMehanic.legion.Add(unit);
                                 unit.addInLegion = true;
                             }
                 }

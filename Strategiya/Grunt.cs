@@ -45,16 +45,19 @@ namespace Strategiya
         }
         public override void Destroy()
         {
-            if(currAnimation < 9)
+            if (currAnimation < 9)
             {
+                GameMehanic.legion.Remove(this);
+                GameMehanic.units.Remove(this);
+                GameMehanic.cemetery.Add(this);
+                isAttack = false;
+                isMooving = false;
                 currAnimation = 9;
                 currentDirection = pastDirection;
             }
             currAnimation += 0.1;
-            isAttack = false;
-            isMooving = false;
             if (currAnimation >= 11.8)
-            Form1.formPointer.units.Remove(this);
+                GameMehanic.cemetery.Remove(this);
         }
     }
 }

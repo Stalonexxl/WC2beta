@@ -1,9 +1,11 @@
 ﻿using System.Drawing;
+using System;
 
 namespace Strategiya
 {
     class Ogre : Unit
     {
+        System.Windows.Forms.Timer timerOgre;
         public Ogre(Point pos)
         {
             Sprite = new Bitmap[14, 9];
@@ -42,19 +44,71 @@ namespace Strategiya
             health = 150;
             attackPower = 5;
             fraction = "neitral";
+            timerOgre = new System.Windows.Forms.Timer();
+            timerOgre.Interval = 100;
+            timerOgre.Tick += new EventHandler(HaveAgressive);
+            timerOgre.Start();
         }
         public override void Destroy()
         {
-            if(currAnimation < 9)
+            if (currAnimation < 9)
             {
+                GameMehanic.legion.Remove(this);
+                GameMehanic.units.Remove(this);
+                GameMehanic.cemetery.Add(this);
+                isAttack = false;
+                isMooving = false;
                 currAnimation = 9;
                 currentDirection = pastDirection;
             }
             currAnimation += 0.1;
-            isAttack = false;
-            isMooving = false;
             if(currAnimation >= 13.8)
-                Form1.formPointer.units.Remove(this);             
+                GameMehanic.cemetery.Remove(this);
+        }
+        private void HaveAgressive(object sender, EventArgs e)
+        {
+            enemy = HaveAgressiveTo();
+            if (enemy != null)
+            {
+                TimerStart();
+                timerOgre.Stop();
+            }
+        }
+        public Unit HaveAgressiveTo()
+        {
+            foreach (Unit Nenemy in GameMehanic.units)
+            {
+                if (Nenemy.Id == Id || Nenemy.fraction == this.fraction)
+                    continue;
+                for (int i = position.X - 3; i <= position.X + 3; i++)
+                    for (int j = position.Y - 3; j <= position.Y + 3; j++)
+                        if (Nenemy.Position.X == i && Nenemy.Position.Y == j)
+                        {
+                            respawnPoint = new Point(Position.X, Position.Y);
+                            return Nenemy;
+                        }
+            }
+            return null;
+        }
+        protected override void harassmentMethod()
+        {
+            base.harassmentMethod();
+            if(Math.Abs(respawnPoint.X - Position.X) >= 7 || Math.Abs(respawnPoint.Y - Position.Y) >= 7)
+            {
+                PathUnit(respawnPoint);
+                timerOgre.Start();
+                enemy = null;
+            }
+        }
+        public override void attack(Unit enemy)
+        {
+            base.attack(enemy);
+            if (enemy.health <= 0)
+            {
+                PathUnit(respawnPoint);
+                timerOgre.Start();
+                enemy = null;
+            }
         }
     }
 }

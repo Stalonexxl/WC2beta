@@ -12,7 +12,7 @@ namespace Strategiya
         string fraction { get; }
         void Destroy();
     }
-    public interface Unitss
+    interface Unitss
     {       
         int attackPower { get; }
         void attack(Unit obj);      

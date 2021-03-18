@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Collections.Generic;
-using System.Windows.Forms;
-using System.Timers;
 
 namespace Strategiya
 {
@@ -14,7 +12,7 @@ namespace Strategiya
     {
         public delegate bool DelegatHandler(Unit obj);
         public delegate Unit DelegatHandler2(Unit obj);
-        public event DelegatHandler Notify;
+        public event DelegatHandler NotifyMove;
         public event DelegatHandler2 NotifyFight;
         public Bitmap Picture { get => Sprite[(int)currAnimation, currentDirection == DirectionUnit.None ? 8 : (int)currentDirection]; }
         public int OffsetX { get; set; }
@@ -29,7 +27,7 @@ namespace Strategiya
         public int NextStep { get => nextStep; }
         public List<Point> Path { get => path; }
         public Point pointUnit { get; set; }
-
+        protected Point respawnPoint;
         System.Windows.Forms.Timer timer;
         System.Windows.Forms.Timer timerDie;
         protected Bitmap[,] Sprite;
@@ -49,14 +47,13 @@ namespace Strategiya
         Point pointSave;
         public bool WantChangePath = false;
         public bool isMooving = false;
-        public bool isHarassment = false;
         public Unit()
         {
             timer = new System.Windows.Forms.Timer();
-            timer.Interval = 150;
+            timer.Interval = 100;
             timer.Tick += new EventHandler(CanAttack);
             timerDie = new System.Windows.Forms.Timer();
-            timerDie.Interval = 120;
+            timerDie.Interval = 100;
             timerDie.Tick += new EventHandler(СheckDestroy);
             timerDie.Start();
         }
@@ -75,8 +72,7 @@ namespace Strategiya
             isNextStep = true;
             isW8Step = false;
             isAttack = false;
-            isMooving = true;
-            TimerStart();           
+            isMooving = true;           
         }
 
         public void MoveUnit()
@@ -123,7 +119,7 @@ namespace Strategiya
                         WantChangePath = false;
                     }
                     //Form1.formPointer._Log("isW8Step");
-                    if (!Notify.Invoke(this))
+                    if (!NotifyMove.Invoke(this))
                     {
                         //Form1.formPointer._Log("isW8Step = false");
                         isW8Step = false;
@@ -193,7 +189,7 @@ namespace Strategiya
                 }
                 else nextStep++;
 
-                if (Notify.Invoke(this))
+                if (NotifyMove.Invoke(this))
                 {
                     isNextStep = false;
                     isW8Step = true;
@@ -263,81 +259,82 @@ namespace Strategiya
 
         public virtual void Destroy(){}
 
-        private Unit enemy;
-        private void TimerStart()
+        public Unit enemy { get; protected set; }
+        public void TimerStart()
         {
-            Form1.formPointer._Log("TimerStart" + Id.ToString());
-            if (NotifyFight?.Invoke(this) != null)
+            if (fraction == "horde")
             {
-                Form1.formPointer._Log("enemy" + Id.ToString());
-                enemy = NotifyFight?.Invoke(this);
-                timer.Start();
+                if (NotifyFight?.Invoke(this) != null)
+                {
+                    //Form1.formPointer._Log("enemy" + Id.ToString());
+                    enemy = NotifyFight?.Invoke(this);
+                    timer.Start();
+                }
+                else
+                {
+                    enemy = null;
+                    timer.Stop();
+                    //Form1.formPointer._Log("NO enemy" + Id.ToString());
+                }
             }
-            else 
+            if (fraction == "neitral")
             {
-                Form1.formPointer._Log("NO enemy" + Id.ToString());
-                enemy = null; 
+                if (enemy != null)
+                    timer.Start();
+                else
+                    timer.Stop();
             }
         }
 
-        private void CanAttack(object sender, EventArgs e)
+        protected void CanAttack(object sender, EventArgs e)
         {
-            harassmentMethod();
+            //Form1.formPointer._Log("timer" + Id.ToString());
             if (currAnimation == 8)
             {
-                Form1.formPointer._Log("attack" + Id.ToString());
+                //Form1.formPointer._Log("attack" + Id.ToString());
                 enemy.health -= attackPower;
                 currAnimation = 5;
             }
-            if (enemy != null && OffsetX == 0 && OffsetY == 0)
+            if (enemy != null && OffsetX == 0 && OffsetY == 0 && !isAttack)
             {
-                if (!isAttack)
-                {
-                    for (int i = enemy.Position.X - 1; i <= enemy.Position.X + 1; i++)
-                        for (int j = enemy.Position.Y - 1; j <= enemy.Position.Y + 1; j++)
-                            if (Position.X == i && Position.Y == j)
-                                isAttack = true;
-                    if(isAttack)
-                        attack(enemy);
-                    else if(!isMooving)
-                        isHarassment = true;
-                }
+                for (int i = enemy.Position.X - 1; i <= enemy.Position.X + 1; i++)
+                    for (int j = enemy.Position.Y - 1; j <= enemy.Position.Y + 1; j++)
+                        if (Position.X == i && Position.Y == j)
+                            isAttack = true;
+                if(isAttack)
+                    attack(enemy);
+                else if(!isMooving)
+                    harassmentMethod();
             }
         }
-        public void harassmentMethod()
+        protected virtual void harassmentMethod()
         {
-            if (isHarassment && enemy != null)
-            {
-                Point harassment = enemy.pointUnit;
-                Form1.formPointer._Log(harassment.ToString() + Id.ToString());
-                Form1.formPointer._Log(enemy.Position.X.ToString() + " " + enemy.Position.Y.ToString() + enemy.ToString());
-                PathUnit(harassment);
-                timer.Stop();
-                isHarassment = false;
-            }
+            Point harassment = enemy.pointUnit;
+            //Form1.formPointer._Log(harassment.ToString() + Id.ToString());
+            //Form1.formPointer._Log(enemy.Position.X.ToString() + " " + enemy.Position.Y.ToString() + enemy.ToString());
+            PathUnit(harassment);
         }
 
-        public void attack(Unit enemy)
+        public virtual void attack(Unit enemy)
         {
-            if(isAttack)
+            if(!isMooving)
             {
-                //Form1.formPointer._Log("isAttack");
                 currentDirection = chooseDirectionOnAttack(enemy);
                 if (currAnimation < 5)
-                    currAnimation = 5;  
+                    currAnimation = 5;
                 currAnimation += 0.5;
-                isAttack = false;
-                if (enemy == null || enemy.health < 0)
+                if (enemy.health <= 0)
                 {
-                    Form1.formPointer._Log("STOP Attack");
+                    //Form1.formPointer._Log("STOP Attack");
                     timer.Stop();
                     currAnimation = 0;
-                    currentDirection = DirectionUnit.None;
+                    currentDirection = DirectionUnit.None;                  
                 }
+                isAttack = false;
             }
         }
 
-        private DirectionUnit chooseDirectionOnAttack(Unit enemy)
+        protected DirectionUnit chooseDirectionOnAttack(Unit enemy)
         {
             if(enemy.Position.X - Position.X == 1 && enemy.Position.Y - Position.Y == 1)
                     return DirectionUnit.DownRight;
