@@ -167,8 +167,7 @@ namespace Strategiya
                             {
                                 unit.WantChangePath = true;
                                 unit.pointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)CameraX, ((Cursor.Position.Y - 57) / 96) + (int)CameraY);
-                                if(unit.fraction == "horde")
-                                    unit.TimerStart();
+                                unit.TimerStart();
                                 if (!unit.isMooving)
                                     unit.PathUnit(unit.pointUnit);
                             }

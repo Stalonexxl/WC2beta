@@ -48,6 +48,7 @@ namespace Strategiya
             timerOgre.Interval = 100;
             timerOgre.Tick += new EventHandler(HaveAgressive);
             timerOgre.Start();
+            respawnPoint = new Point(position.X, position.Y);
         }
         public override void Destroy()
         {
@@ -67,7 +68,8 @@ namespace Strategiya
         }
         private void HaveAgressive(object sender, EventArgs e)
         {
-            enemy = HaveAgressiveTo();
+            if (enemy == null)
+                enemy = HaveAgressiveTo();
             if (enemy != null)
             {
                 TimerStart();
@@ -76,28 +78,26 @@ namespace Strategiya
         }
         public Unit HaveAgressiveTo()
         {
-            foreach (Unit Nenemy in GameMehanic.units)
-            {
-                if (Nenemy.Id == Id || Nenemy.fraction == this.fraction)
-                    continue;
-                for (int i = position.X - 3; i <= position.X + 3; i++)
-                    for (int j = position.Y - 3; j <= position.Y + 3; j++)
-                        if (Nenemy.Position.X == i && Nenemy.Position.Y == j)
-                        {
-                            respawnPoint = new Point(Position.X, Position.Y);
-                            return Nenemy;
-                        }
-            }
+            if(enemy == null && position.X == respawnPoint.X && position.Y == respawnPoint.Y)
+                foreach (Unit Nenemy in GameMehanic.units)
+                {
+                    if (Nenemy.Id == Id || Nenemy.fraction == this.fraction)
+                        continue;
+                    for (int i = position.X - 2; i <= position.X + 2; i++)
+                        for (int j = position.Y - 2; j <= position.Y + 2; j++)
+                            if (Nenemy.Position.X == i && Nenemy.Position.Y == j)
+                                return Nenemy;  
+                }
             return null;
         }
         protected override void harassmentMethod()
         {
             base.harassmentMethod();
-            if(Math.Abs(respawnPoint.X - Position.X) >= 7 || Math.Abs(respawnPoint.Y - Position.Y) >= 7)
+            if (Math.Abs(respawnPoint.X - Position.X) >= 5 || Math.Abs(respawnPoint.Y - Position.Y) >= 5)
             {
-                PathUnit(respawnPoint);
-                timerOgre.Start();
+                Form1.formPointer._Log(respawnPoint.ToString());
                 enemy = null;
+                timerOgre.Start();
             }
         }
         public override void attack(Unit enemy)
@@ -107,7 +107,6 @@ namespace Strategiya
             {
                 PathUnit(respawnPoint);
                 timerOgre.Start();
-                enemy = null;
             }
         }
     }

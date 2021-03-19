@@ -280,9 +280,15 @@ namespace Strategiya
             if (fraction == "neitral")
             {
                 if (enemy != null)
+                {
+                    Form1.formPointer._Log("enemy" + Id.ToString());
                     timer.Start();
+                }
                 else
+                {
+                    Form1.formPointer._Log("NO enemy" + Id.ToString());
                     timer.Stop();
+                }
             }
         }
 
@@ -309,10 +315,38 @@ namespace Strategiya
         }
         protected virtual void harassmentMethod()
         {
-            Point harassment = enemy.pointUnit;
-            //Form1.formPointer._Log(harassment.ToString() + Id.ToString());
-            //Form1.formPointer._Log(enemy.Position.X.ToString() + " " + enemy.Position.Y.ToString() + enemy.ToString());
-            PathUnit(harassment);
+            Point harassment;
+            if (fraction == "horde")
+            {
+                harassment = enemy.pointUnit;
+                Form1.formPointer._Log("harassment " + harassment.ToString() + Id.ToString());
+                //Form1.formPointer._Log(enemy.Position.X.ToString() + " " + enemy.Position.Y.ToString() + enemy.ToString());
+                PathUnit(harassment);
+            }
+
+            if(fraction == "neitral")
+            {
+                if (Math.Abs(respawnPoint.X - Position.X) >= 5 || Math.Abs(respawnPoint.Y - Position.Y) >= 5)
+                {
+                    Form1.formPointer._Log(respawnPoint.ToString());
+                    PathUnit(respawnPoint);
+                    enemy = null;
+                    timer.Stop();
+                }
+                else
+                {
+                    harassment = enemy.pointUnit;
+                    PathUnit(harassment);
+                    if (enemy.health <= 0)
+                    {
+                        //Form1.formPointer._Log("STOP Attack");
+                        enemy = null;
+                        timer.Stop();
+                        currAnimation = 0;
+                        currentDirection = DirectionUnit.None;
+                    }
+                }
+            }
         }
 
         public virtual void attack(Unit enemy)
@@ -334,7 +368,7 @@ namespace Strategiya
             }
         }
 
-        protected DirectionUnit chooseDirectionOnAttack(Unit enemy)
+        private DirectionUnit chooseDirectionOnAttack(Unit enemy)
         {
             if(enemy.Position.X - Position.X == 1 && enemy.Position.Y - Position.Y == 1)
                     return DirectionUnit.DownRight;
