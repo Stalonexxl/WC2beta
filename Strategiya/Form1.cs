@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 
+
 namespace Strategiya
 {
     public partial class Form1 : Form
@@ -22,6 +23,8 @@ namespace Strategiya
         int DragH;
         int DragW;
         Rectangle rectUnit;
+        Client client;
+        string MyName;
         public Form1()
         {
             InitializeComponent();
@@ -37,6 +40,10 @@ namespace Strategiya
 
             this.DoubleBuffered = true;
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
+            MyName = Environment.MachineName;
+            client = new Client(MyName);
+          
+
 
             m = new Map("D:\\WC2\\MAPS\\01");
 
@@ -51,7 +58,6 @@ namespace Strategiya
             //ClientSize = new Size(m.width * size, m.height * size);          
         }
 
-        
         private void update(object sender, EventArgs e)
         {
             CheckContols();
@@ -60,6 +66,25 @@ namespace Strategiya
                 unit.MoveUnit();
         }
 
+        public void ClientMessage(string mes)
+        {
+            try
+            {
+                string[] commands = mes.Split(';');
+                foreach (Unit unit in GameMehanic.units)
+                {
+                    if (unit.Id.ToString() == commands[1])
+                    {
+                        unit.pointUnit = new Point(int.Parse(commands[2]), int.Parse(commands[3]));
+                        unit.PathUnit(unit.pointUnit);
+                    }
+                }
+            }
+            catch
+            {
+
+            }
+        }
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
             e.Graphics.DrawImage(Properties.Resources.buttonpanel, new Point(0, 0));
@@ -167,6 +192,7 @@ namespace Strategiya
                             {
                                 unit.WantChangePath = true;
                                 unit.pointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)CameraX, ((Cursor.Position.Y - 57) / 96) + (int)CameraY);
+                                client.SendMessage(unit.Id.ToString() + ";" + unit.pointUnit.X.ToString() + ";" + unit.pointUnit.Y.ToString());
                                 unit.TimerStart();
                                 if (!unit.isMooving)
                                     unit.PathUnit(unit.pointUnit);

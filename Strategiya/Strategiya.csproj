@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Buildings.cs" />
+    <Compile Include="Client.cs" />
     <Compile Include="CutForest.cs" />
     <Compile Include="FindPath.cs" />
     <Compile Include="Forest.cs" />
