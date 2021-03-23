@@ -2,7 +2,6 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-
 namespace Strategiya
 {
     public partial class Form1 : Form
@@ -23,7 +22,7 @@ namespace Strategiya
         int DragH;
         int DragW;
         Rectangle rectUnit;
-        Client client;
+        public Client client;
         string MyName;
         public Form1()
         {
@@ -60,6 +59,11 @@ namespace Strategiya
 
         private void update(object sender, EventArgs e)
         {
+            if (Client.message != null)
+            {
+                ClientMessage(Client.message);
+                Client.message = null;
+            }
             CheckContols();
             Invalidate();
             foreach (Unit unit in GameMehanic.units)
@@ -68,22 +72,26 @@ namespace Strategiya
 
         public void ClientMessage(string mes)
         {
+            string[] commands = mes.Split(';');
             try
             {
-                string[] commands = mes.Split(';');
                 foreach (Unit unit in GameMehanic.units)
                 {
-                    if (unit.Id.ToString() == commands[1])
+                    if (int.Parse(commands[1]) == unit.Id)
                     {
+                        unit.WantChangePath = true;
                         unit.pointUnit = new Point(int.Parse(commands[2]), int.Parse(commands[3]));
-                        unit.PathUnit(unit.pointUnit);
+                        unit.TimerStart();
+                        if(!unit.isMooving)
+                            unit.PathUnit(unit.pointUnit);
                     }
                 }
             }
             catch
             {
-
+                _Log("message индекс вышел");
             }
+        
         }
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
@@ -192,8 +200,8 @@ namespace Strategiya
                             {
                                 unit.WantChangePath = true;
                                 unit.pointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)CameraX, ((Cursor.Position.Y - 57) / 96) + (int)CameraY);
-                                client.SendMessage(unit.Id.ToString() + ";" + unit.pointUnit.X.ToString() + ";" + unit.pointUnit.Y.ToString());
                                 unit.TimerStart();
+                                client.SendMessage(unit.Id.ToString() + ";" + unit.pointUnit.X.ToString() + ";" + unit.pointUnit.Y.ToString());
                                 if (!unit.isMooving)
                                     unit.PathUnit(unit.pointUnit);
                             }

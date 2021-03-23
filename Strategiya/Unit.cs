@@ -72,7 +72,7 @@ namespace Strategiya
             isNextStep = true;
             isW8Step = false;
             isAttack = false;
-            isMooving = true;           
+            isMooving = true;
         }
 
         public void MoveUnit()
