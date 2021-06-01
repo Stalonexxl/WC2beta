@@ -36,6 +36,7 @@ namespace Strategiya
                 PathLengthFromStart = 0,
                 HeuristicEstimatePathLength = GetHeuristicPathLength(start, goal)
             };
+            //Найти новый гол
             if (!CheckGoal(field, goal, unit))
             {
                 bool go = true;

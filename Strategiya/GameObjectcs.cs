@@ -15,6 +15,6 @@ namespace Strategiya
     interface Unitss
     {       
         int attackPower { get; }
-        void attack(Unit obj);      
+        void attack();      
     }
 }

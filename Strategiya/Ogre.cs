@@ -45,10 +45,11 @@ namespace Strategiya
             attackPower = 5;
             fraction = "neitral";
             timerOgre = new System.Windows.Forms.Timer();
-            timerOgre.Interval = 100;
+            timerOgre.Interval = 500;
             timerOgre.Tick += new EventHandler(HaveAgressive);
             timerOgre.Start();
             respawnPoint = new Point(position.X, position.Y);
+            
         }
         public override void Destroy()
         {
@@ -59,55 +60,47 @@ namespace Strategiya
                 GameMehanic.cemetery.Add(this);
                 isAttack = false;
                 isMooving = false;
+                isDead = true;
                 currAnimation = 9;
                 currentDirection = pastDirection;
             }
             currAnimation += 0.1;
-            if(currAnimation >= 13.8)
+            if (currAnimation >= 14)
+            {
                 GameMehanic.cemetery.Remove(this);
+                timerDie.Stop();
+                return;
+            }
         }
         private void HaveAgressive(object sender, EventArgs e)
         {
-            if (enemy == null)
-                enemy = HaveAgressiveTo();
             if (enemy != null)
+                FightTimerStart(enemy);
+            else
             {
-                TimerStart();
-                timerOgre.Stop();
+                if (position.X == respawnPoint.X && position.Y == respawnPoint.Y)
+                    enemy = HaveAgressiveTo();
+                else if(!isMooving)
+                    PathUnit(respawnPoint);
+            }
+            if (Math.Abs(respawnPoint.X - Position.X) >= 5 || Math.Abs(respawnPoint.Y - Position.Y) >= 5)
+            {
+                timer.Stop();
+                enemy = null;
             }
         }
         public Unit HaveAgressiveTo()
         {
-            if(enemy == null && position.X == respawnPoint.X && position.Y == respawnPoint.Y)
-                foreach (Unit Nenemy in GameMehanic.units)
-                {
-                    if (Nenemy.Id == Id || Nenemy.fraction == this.fraction)
-                        continue;
-                    for (int i = position.X - 2; i <= position.X + 2; i++)
-                        for (int j = position.Y - 2; j <= position.Y + 2; j++)
-                            if (Nenemy.Position.X == i && Nenemy.Position.Y == j)
-                                return Nenemy;  
-                }
+            foreach (Unit Nenemy in GameMehanic.units)
+            {
+                if (Nenemy.Id == Id || Nenemy.fraction == this.fraction)
+                    continue;
+                for (int i = position.X - 2; i <= position.X + 2; i++)
+                    for (int j = position.Y - 2; j <= position.Y + 2; j++)
+                        if (Nenemy.Position.X == i && Nenemy.Position.Y == j)
+                            return Nenemy;  
+            }
             return null;
-        }
-        protected override void harassmentMethod()
-        {
-            base.harassmentMethod();
-            if (Math.Abs(respawnPoint.X - Position.X) >= 5 || Math.Abs(respawnPoint.Y - Position.Y) >= 5)
-            {
-                Form1.formPointer._Log(respawnPoint.ToString());
-                enemy = null;
-                timerOgre.Start();
-            }
-        }
-        public override void attack(Unit enemy)
-        {
-            base.attack(enemy);
-            if (enemy.health <= 0)
-            {
-                PathUnit(respawnPoint);
-                timerOgre.Start();
-            }
         }
     }
 }

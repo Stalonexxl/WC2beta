@@ -47,17 +47,22 @@ namespace Strategiya
         {
             if (currAnimation < 9)
             {
+                GameMehanic.cemetery.Add(this);
                 GameMehanic.legion.Remove(this);
                 GameMehanic.units.Remove(this);
-                GameMehanic.cemetery.Add(this);
                 isAttack = false;
                 isMooving = false;
+                isDead = true;
                 currAnimation = 9;
                 currentDirection = pastDirection;
             }
             currAnimation += 0.1;
-            if (currAnimation >= 11.8)
+            if (currAnimation >= 12)
+            {
                 GameMehanic.cemetery.Remove(this);
+                timerDie.Stop();
+                return;
+            }
         }
     }
 }

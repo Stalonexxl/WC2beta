@@ -25,11 +25,6 @@ namespace Strategiya
             units.Add(new Ogre(new Point(10, 3)));
             units.Add(new Ogre(new Point(11, 3)));
             units.Add(new Ogre(new Point(12, 3)));
-            foreach (Unit Grunt in units)
-            {
-                Grunt.NotifyMove += new Unit.DelegatHandler(StopMoving);
-                Grunt.NotifyFight += new Unit.DelegatHandler2(Fight);
-            }
         }
 
         public static Unit Fight(Unit unit)
@@ -49,7 +44,7 @@ namespace Strategiya
             return null;
         }
 
-        private static bool StopMoving(Unit gr)
+        public static bool StopMoving(Unit gr)
         {
             foreach (Unit Grunt in units)
             {

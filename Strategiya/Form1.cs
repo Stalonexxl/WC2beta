@@ -22,8 +22,9 @@ namespace Strategiya
         int DragH;
         int DragW;
         Rectangle rectUnit;
-        public Client client;
+        //public Client client;
         string MyName;
+        int CountIsMoving = 0;
         public Form1()
         {
             InitializeComponent();
@@ -40,10 +41,8 @@ namespace Strategiya
             this.DoubleBuffered = true;
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
             MyName = Environment.MachineName;
-            client = new Client(MyName);
+            //client = new Client(MyName);
           
-
-
             m = new Map("D:\\WC2\\MAPS\\01");
 
             images = new Image[5];
@@ -59,17 +58,16 @@ namespace Strategiya
 
         private void update(object sender, EventArgs e)
         {
-            if (Client.message != null)
+            /*if (Client.message != null)
             {
                 ClientMessage(Client.message);
                 Client.message = null;
-            }
+            }*/
             CheckContols();
             Invalidate();
             foreach (Unit unit in GameMehanic.units)
                 unit.MoveUnit();
         }
-
         public void ClientMessage(string mes)
         {
             string[] commands = mes.Split(';');
@@ -81,7 +79,7 @@ namespace Strategiya
                     {
                         unit.WantChangePath = true;
                         unit.pointUnit = new Point(int.Parse(commands[2]), int.Parse(commands[3]));
-                        unit.TimerStart();
+                        //unit.TimerStart();
                         if(!unit.isMooving)
                             unit.PathUnit(unit.pointUnit);
                     }
@@ -200,9 +198,9 @@ namespace Strategiya
                             {
                                 unit.WantChangePath = true;
                                 unit.pointUnit = new Point(((Cursor.Position.X - 384) / 96) + (int)CameraX, ((Cursor.Position.Y - 57) / 96) + (int)CameraY);
-                                unit.TimerStart();
-                                client.SendMessage(unit.Id.ToString() + ";" + unit.pointUnit.X.ToString() + ";" + unit.pointUnit.Y.ToString());
-                                if (!unit.isMooving)
+                                unit.FightTimerStart(GameMehanic.Fight(unit));
+                                //client.SendMessage(unit.Id.ToString() + ";" + unit.pointUnit.X.ToString() + ";" + unit.pointUnit.Y.ToString());
+                                if (!unit.isMooving && !unit.isDead)
                                     unit.PathUnit(unit.pointUnit);
                             }
                         }
